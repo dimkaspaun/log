@@ -49,11 +49,11 @@ systemctl restart chronyd
 
 ```bash
 systemctl status chronyd
+```
 
 ![2024-02-16_09-44-49](https://github.com/dimkaspaun/log/assets/156161074/4b38059f-52b3-4ec0-821a-a85c0091e872)
 
 
-```
 
 - Далее проверим, что время и дата указаны правильно
 
@@ -83,10 +83,11 @@ systemctl start nginx
 
 ```bash
 systemctl status nginx
+```
 
 ![2024-02-16_09-46-27](https://github.com/dimkaspaun/log/assets/156161074/8c12484e-1df8-4ad3-86c4-839a078b6275)
 
-
+```
 ss -tln | grep 80
 
 LISTEN     0      128          *:80                       *:*                  
@@ -156,10 +157,9 @@ systemctl restart rsyslog
 
 - Если ошибок не допущено, то у нас будут видны открытые порты TCP,UDP 514
 
-```bash
+
  ![2024-02-16_09-56-38](https://github.com/dimkaspaun/log/assets/156161074/6148b25c-1daf-4542-9caf-dda5c2f983e5)
 
-```
 
 ### Далее настроим отправку логов с web-сервера
 
@@ -184,10 +184,10 @@ http {
 
 - Далее проверяем, что конфигурация nginx указана правильно: nginx -t
 
-```bash
+
 ![2024-02-16_09-59-04](https://github.com/dimkaspaun/log/assets/156161074/26002988-a58c-46cf-8c1f-4dc12f79d650)
 
-```
+
 
 - Далее перезапустим nginx: systemctl restart nginx
 
@@ -204,11 +204,11 @@ rm -f /usr/share/nginx/html/img/header-background.png
   
 - Далее заходим на log-сервер и смотрим информацию об nginx
 
-```bash
+
 
 ![2024-02-16_10-23-34](https://github.com/dimkaspaun/log/assets/156161074/571d2332-5c15-43c3-a408-0697c0cc8c57)
 
-```
+
 
 > Видим, что логи отправляются корректно.
 
@@ -216,9 +216,9 @@ rm -f /usr/share/nginx/html/img/header-background.png
 
 - За аудит отвечает утилита auditd, в RHEL-based системах обычно он уже предустановлен. Проверим это
 
-```bash
+
 ![2024-02-16_10-24-17](https://github.com/dimkaspaun/log/assets/156161074/00fcb991-69c3-465d-838c-7515adedef2b)
-```
+
 
 > Настроим аудит изменения конфигурации nginx
 
@@ -241,21 +241,22 @@ rm -f /usr/share/nginx/html/img/header-background.png
 
 ```bash
 ausearch -k nginx_conf -f /etc/nginx/nginx.conf
+```
 
 ![2024-02-16_10-30-10](https://github.com/dimkaspaun/log/assets/156161074/74cba74f-3e5d-4270-8dd8-bb1f145d5d87)
 
 
-```
+
 
 - Также можно воспользоваться поиском по файлу /var/log/audit/audit.log, указав наш тэг
 
 ```bash
 grep nginx_conf /var/log/audit/audit.log
 
+```
+
 ![2024-02-16_10-28-01](https://github.com/dimkaspaun/log/assets/156161074/1aa8d76e-93f5-4206-ab36-030425950d65)
 
-
-```
 
 ### Далее настроим пересылку логов на удаленный сервер. Auditd по умолчанию не умеет пересылать логи, для пересылки на web-сервере потребуется установить пакет audispd-plugins
 
@@ -303,18 +304,18 @@ tcp_listen_port = 60
 
 - На этом настройка пересылки логов аудита закончена. Можем попробовать поменять атрибут у файла /etc/nginx/nginx.conf и проверить на log-сервере, что пришла информация об изменении атрибута
 
-```bash
 
 ![2024-02-16_10-36-51](https://github.com/dimkaspaun/log/assets/156161074/cea997c9-f560-4938-9fb6-104ada812283)
 
-```
+
 
 - Видим лог об изменении атрибута файла на web
 
 ```bash
 grep web /var/log/audit/audit.log
+```
 
 ![2024-02-16_10-37-32](https://github.com/dimkaspaun/log/assets/156161074/e8212e97-bfd4-40ab-859d-615f0ec3acc4)
 
-```
+
 
