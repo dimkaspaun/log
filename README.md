@@ -50,23 +50,9 @@ systemctl restart chronyd
 ```bash
 systemctl status chronyd
 
-● chronyd.service - NTP client/server
-   Loaded: loaded (/usr/lib/systemd/system/chronyd.service; enabled; vendor preset: enabled)
-   Active: active (running) since Tue 2022-02-01 23:07:32 MSK; 4s ago
-     Docs: man:chronyd(8)
-           man:chrony.conf(5)
-  Process: 3269 ExecStartPost=/usr/libexec/chrony-helper update-daemon (code=exited, status=0/SUCCESS)
-  Process: 3265 ExecStart=/usr/sbin/chronyd $OPTIONS (code=exited, status=0/SUCCESS)
- Main PID: 3267 (chronyd)
-   CGroup: /system.slice/chronyd.service
-           └─3267 /usr/sbin/chronyd
+![2024-02-16_09-44-49](https://github.com/dimkaspaun/log/assets/156161074/4b38059f-52b3-4ec0-821a-a85c0091e872)
 
-Feb 01 23:07:32 web systemd[1]: Stopped NTP client/server.
-Feb 01 23:07:32 web systemd[1]: Starting NTP client/server...
-Feb 01 23:07:32 web chronyd[3267]: chronyd version 3.4 starting (+CMDMON +NTP +REFCLOCK +RTC +PRIVDROP +SCFILTER +SIGND +ASYNCDNS +SECHASH +IPV6 +DEBUG)
-Feb 01 23:07:32 web chronyd[3267]: Frequency -24.463 +/- 2.561 ppm read from /var/lib/chrony/drift
-Feb 01 23:07:32 web systemd[1]: Started NTP client/server.
-Feb 01 23:07:37 web chronyd[3267]: Selected source 85.21.78.23
+
 ```
 
 - Далее проверим, что время и дата указаны правильно
@@ -98,21 +84,8 @@ systemctl start nginx
 ```bash
 systemctl status nginx
 
-● nginx.service - The nginx HTTP and reverse proxy server
-   Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; vendor preset: disabled)
-   Active: active (running) since Tue 2022-02-01 23:10:39 MSK; 2min 12s ago
-  Process: 3531 ExecStart=/usr/sbin/nginx (code=exited, status=0/SUCCESS)
-  Process: 3529 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
-  Process: 3528 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
- Main PID: 3533 (nginx)
-   CGroup: /system.slice/nginx.service
-           ├─3533 nginx: master process /usr/sbin/nginx
-           └─3534 nginx: worker process
+![2024-02-16_09-46-27](https://github.com/dimkaspaun/log/assets/156161074/8c12484e-1df8-4ad3-86c4-839a078b6275)
 
-Feb 01 23:10:39 web systemd[1]: Starting The nginx HTTP and reverse proxy server...
-Feb 01 23:10:39 web nginx[3529]: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-Feb 01 23:10:39 web nginx[3529]: nginx: configuration file /etc/nginx/nginx.conf test is successful
-Feb 01 23:10:39 web systemd[1]: Started The nginx HTTP and reverse proxy server.
 
 ss -tln | grep 80
 
@@ -124,7 +97,7 @@ LISTEN     0      128       [::]:80                    [::]:*
 
 ### Настройка центрального сервера сбора логов
 
-- Откроем ещё одно окно терминала и подключимся по ssh к ВМ log: vagrant ssh log
+- Откроем ещё одно окно терминала и подключимся по ssh к ВМ log: vagrant ssh rsyslog
 - Перейдем в пользователя root: sudo -i
 - rsyslog должен быть установлен по умолчанию в нашей ОС, проверим это
 
@@ -184,11 +157,8 @@ systemctl restart rsyslog
 - Если ошибок не допущено, то у нас будут видны открытые порты TCP,UDP 514
 
 ```bash
-ss -tuln | grep 514
-udp    UNCONN     0      0         *:514                   *:*                  
-udp    UNCONN     0      0      [::]:514                [::]:*                  
-tcp    LISTEN     0      25        *:514                   *:*                  
-tcp    LISTEN     0      25     [::]:514                [::]:* 
+ ![2024-02-16_09-56-38](https://github.com/dimkaspaun/log/assets/156161074/6148b25c-1daf-4542-9caf-dda5c2f983e5)
+
 ```
 
 ### Далее настроим отправку логов с web-сервера
@@ -215,9 +185,8 @@ http {
 - Далее проверяем, что конфигурация nginx указана правильно: nginx -t
 
 ```bash
-nginx -t
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
+![2024-02-16_09-59-04](https://github.com/dimkaspaun/log/assets/156161074/26002988-a58c-46cf-8c1f-4dc12f79d650)
+
 ```
 
 - Далее перезапустим nginx: systemctl restart nginx
@@ -229,18 +198,16 @@ rm -f /usr/share/nginx/html/img/header-background.png
 ```
 
 - Попробуем несколько раз зайти по адресу <http://192.168.50.10>
+
+![2024-02-16_10-16-39](https://github.com/dimkaspaun/log/assets/156161074/eb5bcca5-293a-49e4-8a2a-e2ddeb1dd092)
+
+  
 - Далее заходим на log-сервер и смотрим информацию об nginx
 
 ```bash
-cat /var/log/rsyslog/web/nginx_access.log
-Feb  1 23:35:43 web nginx_access: 127.0.0.1 - - [01/Feb/2022:23:35:43 +0300] "GET / HTTP/1.1" 200 4833 "-" "curl/7.29.0"
-Feb  1 23:35:44 web nginx_access: 127.0.0.1 - - [01/Feb/2022:23:35:44 +0300] "GET / HTTP/1.1" 200 4833 "-" "curl/7.29.0"
-Feb  1 23:35:44 web nginx_access: 127.0.0.1 - - [01/Feb/2022:23:35:44 +0300] "GET / HTTP/1.1" 200 4833 "-" "curl/7.29.0"
-Feb  1 23:35:45 web nginx_access: 127.0.0.1 - - [01/Feb/2022:23:35:45 +0300] "GET / HTTP/1.1" 200 4833 "-" "curl/7.29.0"
 
-cat /var/log/rsyslog/web/nginx_error.log
-Feb  1 23:38:57 web nginx_error: 2022/02/01 23:38:57 [error] 694#694: *1 open() "/usr/share/nginx/html/img/header-background.png" failed (2: No such file or directory), client: 10.0.2.2, server: _, request: "GET /img/header-background.png HTTP/1.1", host: "localhost", referrer: "http://localhost/"
-Feb  1 23:39:45 web nginx_error: 2022/02/01 23:39:45 [error] 694#694: *1 open() "/usr/share/nginx/html/img/header-background.png" failed (2: No such file or directory), client: 10.0.2.2, server: _, request: "GET /img/header-background.png HTTP/1.1", host: "localhost", referrer: "http://localhost/"
+![2024-02-16_10-23-34](https://github.com/dimkaspaun/log/assets/156161074/571d2332-5c15-43c3-a408-0697c0cc8c57)
+
 ```
 
 > Видим, что логи отправляются корректно.
@@ -250,9 +217,7 @@ Feb  1 23:39:45 web nginx_error: 2022/02/01 23:39:45 [error] 694#694: *1 open() 
 - За аудит отвечает утилита auditd, в RHEL-based системах обычно он уже предустановлен. Проверим это
 
 ```bash
-rpm -qa | grep audit
-audit-2.8.5-4.el7.x86_64
-audit-libs-2.8.5-4.el7.x86_64
+![2024-02-16_10-24-17](https://github.com/dimkaspaun/log/assets/156161074/00fcb991-69c3-465d-838c-7515adedef2b)
 ```
 
 > Настроим аудит изменения конфигурации nginx
@@ -277,46 +242,9 @@ audit-libs-2.8.5-4.el7.x86_64
 ```bash
 ausearch -k nginx_conf -f /etc/nginx/nginx.conf
 
-----
-time->Tue Feb  1 23:50:09 2022
-type=CONFIG_CHANGE msg=audit(1643748609.506:630): auid=1000 ses=3 op=updated_rules path="/etc/nginx/nginx.conf" key="nginx_conf" list=4 res=1
-----
-time->Tue Feb  1 23:50:09 2022
-type=PROCTITLE msg=audit(1643748609.506:631): proctitle=7669002F6574632F6E67696E782F6E67696E782E636F6E66
-type=PATH msg=audit(1643748609.506:631): item=3 name="/etc/nginx/nginx.conf~" inode=12492 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=CREATE cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=PATH msg=audit(1643748609.506:631): item=2 name="/etc/nginx/nginx.conf" inode=12492 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=DELETE cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=PATH msg=audit(1643748609.506:631): item=1 name="/etc/nginx/" inode=85 dev=08:01 mode=040755 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=PARENT cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=PATH msg=audit(1643748609.506:631): item=0 name="/etc/nginx/" inode=85 dev=08:01 mode=040755 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=PARENT cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=CWD msg=audit(1643748609.506:631):  cwd="/root"
-type=SYSCALL msg=audit(1643748609.506:631): arch=c000003e syscall=82 success=yes exit=0 a0=139c9d0 a1=13a92d0 a2=fffffffffffffe80 a3=7ffecc1f1c20 items=4 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-----
-time->Tue Feb  1 23:50:09 2022
-type=CONFIG_CHANGE msg=audit(1643748609.506:632): auid=1000 ses=3 op=updated_rules path="/etc/nginx/nginx.conf" key="nginx_conf" list=4 res=1
-----
-time->Tue Feb  1 23:50:09 2022
-type=PROCTITLE msg=audit(1643748609.506:633): proctitle=7669002F6574632F6E67696E782F6E67696E782E636F6E66
-type=PATH msg=audit(1643748609.506:633): item=1 name="/etc/nginx/nginx.conf" inode=11553 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:httpd_config_t:s0 objtype=CREATE cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=PATH msg=audit(1643748609.506:633): item=0 name="/etc/nginx/" inode=85 dev=08:01 mode=040755 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=PARENT cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=CWD msg=audit(1643748609.506:633):  cwd="/root"
-type=SYSCALL msg=audit(1643748609.506:633): arch=c000003e syscall=2 success=yes exit=3 a0=139c9d0 a1=241 a2=1a4 a3=0 items=2 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-----
-time->Tue Feb  1 23:50:09 2022
-type=PROCTITLE msg=audit(1643748609.507:634): proctitle=7669002F6574632F6E67696E782F6E67696E782E636F6E66
-type=PATH msg=audit(1643748609.507:634): item=0 name="/etc/nginx/nginx.conf" inode=11553 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=unconfined_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=CWD msg=audit(1643748609.507:634):  cwd="/root"
-type=SYSCALL msg=audit(1643748609.507:634): arch=c000003e syscall=188 success=yes exit=0 a0=139c9d0 a1=7fcb4e76bf6a a2=13ac530 a3=24 items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-----
-time->Tue Feb  1 23:50:09 2022
-type=PROCTITLE msg=audit(1643748609.507:635): proctitle=7669002F6574632F6E67696E782F6E67696E782E636F6E66
-type=PATH msg=audit(1643748609.507:635): item=0 name="/etc/nginx/nginx.conf" inode=11553 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=CWD msg=audit(1643748609.507:635):  cwd="/root"
-type=SYSCALL msg=audit(1643748609.507:635): arch=c000003e syscall=90 success=yes exit=0 a0=139c9d0 a1=81a4 a2=0 a3=24 items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-----
-time->Tue Feb  1 23:50:09 2022
-type=PROCTITLE msg=audit(1643748609.507:636): proctitle=7669002F6574632F6E67696E782F6E67696E782E636F6E66
-type=PATH msg=audit(1643748609.507:636): item=0 name="/etc/nginx/nginx.conf" inode=11553 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-type=CWD msg=audit(1643748609.507:636):  cwd="/root"
-type=SYSCALL msg=audit(1643748609.507:636): arch=c000003e syscall=188 success=yes exit=0 a0=139c9d0 a1=7fcb4e321e2f a2=13ac640 a3=1c items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
+![2024-02-16_10-30-10](https://github.com/dimkaspaun/log/assets/156161074/74cba74f-3e5d-4270-8dd8-bb1f145d5d87)
+
+
 ```
 
 - Также можно воспользоваться поиском по файлу /var/log/audit/audit.log, указав наш тэг
@@ -324,15 +252,9 @@ type=SYSCALL msg=audit(1643748609.507:636): arch=c000003e syscall=188 success=ye
 ```bash
 grep nginx_conf /var/log/audit/audit.log
 
-type=CONFIG_CHANGE msg=audit(1643748265.443:627): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
-type=CONFIG_CHANGE msg=audit(1643748265.443:628): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
-type=CONFIG_CHANGE msg=audit(1643748609.506:630): auid=1000 ses=3 op=updated_rules path="/etc/nginx/nginx.conf" key="nginx_conf" list=4 res=1
-type=SYSCALL msg=audit(1643748609.506:631): arch=c000003e syscall=82 success=yes exit=0 a0=139c9d0 a1=13a92d0 a2=fffffffffffffe80 a3=7ffecc1f1c20 items=4 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-type=CONFIG_CHANGE msg=audit(1643748609.506:632): auid=1000 ses=3 op=updated_rules path="/etc/nginx/nginx.conf" key="nginx_conf" list=4 res=1
-type=SYSCALL msg=audit(1643748609.506:633): arch=c000003e syscall=2 success=yes exit=3 a0=139c9d0 a1=241 a2=1a4 a3=0 items=2 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-type=SYSCALL msg=audit(1643748609.507:634): arch=c000003e syscall=188 success=yes exit=0 a0=139c9d0 a1=7fcb4e76bf6a a2=13ac530 a3=24 items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-type=SYSCALL msg=audit(1643748609.507:635): arch=c000003e syscall=90 success=yes exit=0 a0=139c9d0 a1=81a4 a2=0 a3=24 items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-type=SYSCALL msg=audit(1643748609.507:636): arch=c000003e syscall=188 success=yes exit=0 a0=139c9d0 a1=7fcb4e321e2f a2=13ac640 a3=1c items=1 ppid=2270 pid=2425 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="vi" exe="/usr/bin/vi" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
+![2024-02-16_10-28-01](https://github.com/dimkaspaun/log/assets/156161074/1aa8d76e-93f5-4206-ab36-030425950d65)
+
+
 ```
 
 ### Далее настроим пересылку логов на удаленный сервер. Auditd по умолчанию не умеет пересылать логи, для пересылки на web-сервере потребуется установить пакет audispd-plugins
@@ -382,43 +304,17 @@ tcp_listen_port = 60
 - На этом настройка пересылки логов аудита закончена. Можем попробовать поменять атрибут у файла /etc/nginx/nginx.conf и проверить на log-сервере, что пришла информация об изменении атрибута
 
 ```bash
-ls -l /etc/nginx/nginx.conf
--rw-r--r--. 1 root root 2523 Feb  1 23:50 /etc/nginx/nginx.conf
 
-chmod +x /etc/nginx/nginx.conf
+![2024-02-16_10-36-51](https://github.com/dimkaspaun/log/assets/156161074/cea997c9-f560-4938-9fb6-104ada812283)
 
-ls -l /etc/nginx/nginx.conf
--rwxr-xr-x. 1 root root 2523 Feb  1 23:50 /etc/nginx/nginx.conf
 ```
 
 - Видим лог об изменении атрибута файла на web
 
 ```bash
 grep web /var/log/audit/audit.log
-node=web type=DAEMON_START msg=audit(1643749376.914:9581): op=start ver=2.8.5 format=raw kernel=3.10.0-1127.el7.x86_64 auid=4294967295 pid=2616 uid=0 ses=4294967295 subj=system_u:system_r:auditd_t:s0 res=success
-node=web type=CONFIG_CHANGE msg=audit(1643749377.055:651): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=remove_rule key="nginx_conf" list=4 res=1
-node=web type=CONFIG_CHANGE msg=audit(1643749377.055:652): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=remove_rule key="nginx_conf" list=4 res=1
-node=web type=CONFIG_CHANGE msg=audit(1643749377.057:653): audit_backlog_limit=8192 old=8192 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
-node=web type=CONFIG_CHANGE msg=audit(1643749377.057:654): audit_failure=1 old=1 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
-node=web type=CONFIG_CHANGE msg=audit(1643749377.058:655): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
-node=web type=CONFIG_CHANGE msg=audit(1643749377.058:656): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
-node=web type=SERVICE_START msg=audit(1643749377.062:657): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 msg='unit=auditd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
-node=web type=SYSCALL msg=audit(1643749514.528:658): arch=c000003e syscall=268 success=yes exit=0 a0=ffffffffffffff9c a1=25b0420 a2=1ed a3=7ffd980f1720 items=1 ppid=2270 pid=2640 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="chmod" exe="/usr/bin/chmod" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
-node=web type=CWD msg=audit(1643749514.528:658):  cwd="/root"
-node=web type=PATH msg=audit(1643749514.528:658): item=0 name="/etc/nginx/nginx.conf" inode=11553 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
-node=web type=PROCTITLE msg=audit(1643749514.528:658): proctitle=63686D6F64002B78002F6574632F6E67696E782F6E67696E782E636F6E66
+
+![2024-02-16_10-37-32](https://github.com/dimkaspaun/log/assets/156161074/e8212e97-bfd4-40ab-859d-615f0ec3acc4)
+
 ```
 
-## Задание со *
-
-### Добавим еще одну виртуалку для ELK
-
-На виртуалку с nginx устанавливается filebeat, который собирает логи с nginx и отправляет на logstash, который в свою очередь парсит логи и передает дальше на elasticsearch.  
-Также можно не устанавливать logstash, а отправлять логи напрямую из filebeat в elasticsearch уже в json. Но логи из filebeat передаются в json только если их отправлять напрямую в elasticsearch.  
-Как плюс можно установить готовые дашборды из filebeat.
-
-В данном же примере для наглядности логи передаются для обработки в logstash.
-
-После завершения ansible playbook можно смело подключаться к kibana на порту 5601 из браузера, создавать индекс и наблюдать нащи логи nginx:
-
-![img](./kibana.png)
